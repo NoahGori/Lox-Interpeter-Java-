@@ -79,7 +79,18 @@ class Scanner {
                 if (match('/')) {
                     // A comment goes until the end of the line.
                     while (peek() != '\n' && !isAtEnd()) advance();
-                } else {
+                } else if (match('*')) {
+                    // A block comment goes until */
+                    while (peek() != '*' && peekNext() != '/' && !isAtEnd()){
+                        if (peek() == '\n') line++;
+                        advance();
+                    }
+                    //Handle event where we reach end of line without closing comment but also remove */ ending
+                    if(!isAtEnd()){
+                        advance();
+                        advance();
+                    }
+                }   else {
                     addToken(SLASH);
                 }
                 break;
