@@ -34,7 +34,7 @@ class Interpreter implements Expr.Visitor<Object> {
 
     private void checkNumberOperand(Token operator, Object operand) {
         if (operand instanceof Double) return;
-        throw new RuntimeError(operator, "Operator must be a number")
+        throw new RuntimeError(operator, "Operator must be a number");
     }
 
     private void checkNumberOperands(Token operator, Object left, Object right) {
@@ -60,23 +60,27 @@ class Interpreter implements Expr.Visitor<Object> {
         if (object == null) return "nil";
 
         if (object instanceof Double) {
-            String text = object.toString();
-            if (text.endsWith(".0")) {
-                text = text.substring(0, text.length() - 2);
-            }
-            return text;
+            return stringifyDouble(object);
         }
 
         return object.toString();
     }
     
     @Override
-    public Object visitGroupingExpr(Expr.Grouping exp) {
+    public Object visitGroupingExpr(Expr.Grouping expr) {
         return evaluate(expr.expression);
     }
 
     private Object evaluate(Expr expr) {
         return expr.accept(this);
+    }
+
+    private String stringifyDouble(Object object) {
+        String text = object.toString();
+        if (text.endsWith(".0")) {
+            text = text.substring(0, text.length() - 2);
+        }
+        return text;
     }
 
     @Override
@@ -106,13 +110,25 @@ class Interpreter implements Expr.Visitor<Object> {
                 if (left instanceof Double && right instanceof Double) {
                     return (double)left + (double)right;
                 }
-                if (left instanceof String && left instanceof String) {
+                if (left instanceof String && right instanceof String) {
                     return (String)left + (String)right;
+                }
+                if (left instanceof String || right instanceof String) {
+                    if (left instanceof Double){
+                        return stringifyDouble(left) + (String)right;
+                    }
+                    if (right instanceof Double) {
+                        return (String)left + stringifyDouble(right);
+                    }
+                    return left.toString() + right.toString();
                 }
                 
                 throw new RuntimeError(expr.operator, "Operands must be two numbers or two string");
             case SLASH:
                 checkNumberOperands(expr.operator, left, right);
+                if((double)right == 0){
+                    throw new RuntimeError(expr.operator, "Divide by zero");
+                }
                 return (double)left / (double)right;
             case STAR:
                 checkNumberOperands(expr.operator, left, right);
